@@ -9,13 +9,42 @@
       <node pkg="sd_vehicle_interface" name="sd_vehicle_interface" exec="sd_vehicle_interface_node">
         <remap from="sd_imu_raw" to="imu_raw"/>
         <param name="imu_frame_id" value="streetdrone/imu_link"/>
+        <remap from="sd_current_GPS" to="nav_sat_fix"/>
       </node>
     </group>
 
     <include file="$(find-pkg-share imu_corrector)/launch/imu_corrector.launch.xml">
       <arg name="input_topic" value="streetdrone/imu_raw"/>
       <arg name="output_topic" value="imu_data"/>
-      <arg name="param_file" value="$(find-pkg-share individual_params)/config/$(env VEHICLE_ID default)/mcav_autoware_sensor_kit/imu_corrector.param.yaml"/>
+      <!-- <arg name="param_file" value="$(find-pkg-share individual_params)/config/$(env VEHICLE_ID default)/mcav_autoware_sensor_kit/imu_corrector.param.yaml"/> -->
+    </include>
+  </group>
+
+
+  <arg name="gnss_receiver" default="ublox" description="ublox(default) or septentrio"/>
+  <arg name="coordinate_system" default="1" description="0:UTM, 1:MGRS, 2:PLANE"/>
+
+  <group>
+    <!-- <push-ros-namespace namespace="gnss"/> -->
+
+    <!-- Switch topic name -->
+    <let name="navsatfix_topic_name" value="streetdrone/nav_sat_fix"/>
+    <let name="navpvt_topic_name" value="streetdrone/navpvt/unused"/>
+
+
+    <!-- NavSatFix to MGRS Pose -->
+    <include file="$(find-pkg-share gnss_poser)/launch/gnss_poser.launch.xml">
+      <arg name="input_topic_fix" value="$(var navsatfix_topic_name)"/>
+      <arg name="input_topic_navpvt" value="$(var navpvt_topic_name)"/>
+
+      <arg name="output_topic_gnss_pose" value="pose"/>
+      <arg name="output_topic_gnss_pose_cov" value="pose_with_covariance"/>
+      <arg name="output_topic_gnss_fixed" value="fixed"/>
+
+      <arg name="coordinate_system" value="$(var coordinate_system)"/>
+      <arg name="use_ublox_receiver" value="false"/>
+
+      <arg name="gnss_frame" value="gnss_link"/>
     </include>
   </group>
 </launch>
